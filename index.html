@@ -1,0 +1,314 @@
+<!--
+  Elegant "Seductive + Sophisticated" Chat Widget
+  Avatar (circular) + soft animated glow + talking pulse
+  Avatar source (local path from this session):
+  /mnt/data/A_3D-rendered_digital_portrait_of_a_young_woman_fe.png
+-->
+
+<style>
+/* Widget container */
+#model-chat-widget {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 360px;
+  height: 560px;
+  background: linear-gradient(180deg, rgba(12,12,12,0.72), rgba(6,6,6,0.78));
+  border-radius: 22px;
+  overflow: hidden;
+  color: #fff;
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  box-shadow: 0 18px 50px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  z-index: 99999;
+}
+
+/* Header */
+#model-header {
+  padding: 18px 14px 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Avatar frame - circular with glow */
+#model-avatar-frame {
+  width: 84px;
+  height: 84px;
+  position: relative;
+  flex: 0 0 84px;
+}
+
+#model-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  position: relative;
+  z-index: 2;
+  filter: saturate(1.12) contrast(1.06) brightness(1.04);
+  border: 2px solid rgba(255,255,255,0.06);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+}
+
+/* Soft static glow ring */
+#model-avatar-glow {
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  width: calc(100% + 16px);
+  height: calc(100% + 16px);
+  border-radius: 50%;
+  z-index: 1;
+  pointer-events: none;
+  box-shadow: 0 0 28px rgba(255, 110, 170, 0.85);
+  transition: box-shadow 300ms ease, transform 300ms ease;
+  transform: scale(1);
+  opacity: 0.95;
+}
+
+/* Pulse animation used when AI 'speaks' */
+@keyframes speakPulse {
+  0% { box-shadow: 0 0 18px rgba(255,110,170,0.7); transform: scale(1); }
+  50% { box-shadow: 0 0 48px rgba(255,120,185,1); transform: scale(1.06); }
+  100% { box-shadow: 0 0 18px rgba(255,110,170,0.7); transform: scale(1); }
+}
+
+/* Title + subtitle */
+#model-title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+}
+#model-sub {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 4px;
+}
+
+/* Messages area */
+#model-messages {
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0));
+}
+
+/* Message bubbles */
+.model-msg {
+  max-width: 78%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  line-height: 1.4;
+  font-size: 14px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+  transform-origin: left center;
+  animation: msgAppear 220ms ease;
+}
+@keyframes msgAppear {
+  from { opacity: 0; transform: translateY(6px) scale(0.995); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.model-msg.user {
+  margin-left: auto;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.06));
+  color: #fff;
+  border-radius: 14px 14px 6px 14px;
+}
+
+.model-msg.ai {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  color: #fff;
+  border-radius: 14px 14px 14px 6px;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+/* Input area */
+#model-input-area {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  align-items: center;
+  border-top: 1px solid rgba(255,255,255,0.03);
+  background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.35));
+}
+
+#model-input {
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: none;
+  outline: none;
+  background: rgba(255,255,255,0.03);
+  color: #fff;
+  font-size: 14px;
+}
+
+#model-send {
+  width: 52px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 600;
+  background: linear-gradient(180deg, rgba(255,90,150,0.96), rgba(240,50,130,0.98));
+  color: white;
+  box-shadow: 0 8px 26px rgba(240,50,130,0.18);
+}
+
+/* small helper for initial tip */
+#model-tip {
+  font-size: 12px;
+  opacity: 0.7;
+  text-align: center;
+  padding: 8px 12px;
+}
+</style>
+
+<div id="model-chat-widget" role="complementary" aria-label="Virtual Model Chat">
+  <div id="model-header">
+    <div id="model-avatar-frame" aria-hidden="true">
+      <img id="model-avatar" src="/mnt/data/A_3D-rendered_digital_portrait_of_a_young_woman_fe.png" alt="Model avatar">
+      <div id="model-avatar-glow" aria-hidden="true"></div>
+    </div>
+
+    <div style="flex:1; min-width:0;">
+      <div id="model-title">The Model</div>
+      <div id="model-sub">Seductive • Sophisticated • AI Companion</div>
+    </div>
+  </div>
+
+  <div id="model-messages" aria-live="polite">
+    <div id="model-tip">Say hi — she remembers your preferences and keeps things elegant.</div>
+  </div>
+
+  <div id="model-input-area">
+    <input id="model-input" type="text" autocomplete="off" placeholder="Say something… (e.g., hi, compliment me, ask a question)" />
+    <button id="model-send" aria-label="Send message">➤</button>
+  </div>
+</div>
+
+<script>
+/*
+  Chat widget behaviour:
+  - Uses localStorage for private memory (tone, boldness, favoriteTopics)
+  - Sends { message, memory } to POST /ai-chat and expects { reply }
+  - Avatar glows while AI is composing, pulses while replying
+*/
+
+/* Memory helpers */
+function loadMemory() {
+  try {
+    const raw = localStorage.getItem("modelMemory");
+    return raw ? JSON.parse(raw) : { tone: "seductive", boldness: "medium", favoriteTopics: [] };
+  } catch (e) {
+    return { tone: "seductive", boldness: "medium", favoriteTopics: [] };
+  }
+}
+function saveMemory(mem) { localStorage.setItem("modelMemory", JSON.stringify(mem)); }
+
+/* UI helpers */
+const messagesEl = document.getElementById("model-messages");
+const avatarGlow = document.getElementById("model-avatar-glow");
+
+function appendMessage(text, who="ai") {
+  // remove tip if present
+  const tip = document.getElementById("model-tip");
+  if (tip) tip.remove();
+
+  const d = document.createElement("div");
+  d.className = "model-msg " + (who === "You" ? "user" : "ai");
+  d.textContent = text;
+  messagesEl.appendChild(d);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+/* Glow helpers */
+function startComposingGlow() {
+  avatarGlow.style.transition = "box-shadow 180ms ease, transform 180ms ease";
+  avatarGlow.style.boxShadow = "0 0 28px rgba(255, 110, 170, 0.95)";
+  avatarGlow.style.transform = "scale(1.03)";
+}
+function stopComposingGlow() {
+  avatarGlow.style.boxShadow = "0 0 22px rgba(255, 110, 170, 0.86)";
+  avatarGlow.style.transform = "scale(1)";
+}
+function pulseSpeak(times=2) {
+  // add the animation then remove it
+  avatarGlow.style.animation = "speakPulse 950ms ease";
+  let count = 1;
+  const repeat = setInterval(() => {
+    avatarGlow.style.animation = null;
+    setTimeout(() => { avatarGlow.style.animation = "speakPulse 950ms ease"; }, 60);
+    count++;
+    if (count >= times) {
+      clearInterval(repeat);
+      setTimeout(() => { avatarGlow.style.animation = null; }, 1000);
+    }
+  }, 1000);
+}
+
+/* Send message flow */
+async function sendMessage() {
+  const input = document.getElementById("model-input");
+  const text = input.value.trim();
+  if (!text) return;
+  appendMessage(text, "You");
+  input.value = "";
+
+  // Update memory heuristically
+  const memory = loadMemory();
+  if (/be bolder|dare more|more bold/i.test(text)) memory.boldness = "high";
+  if (/softer|gentle|calmer/i.test(text)) memory.boldness = "low";
+  if (/elegant|classy|poetic/i.test(text)) memory.tone = "elegant";
+  // Save
+  saveMemory(memory);
+
+  // UI glow while composing
+  startComposingGlow();
+
+  try {
+    const resp = await fetch("/ai-chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, memory })
+    });
+
+    if (!resp.ok) {
+      throw new Error("AI endpoint error: " + resp.status);
+    }
+    const data = await resp.json();
+
+    // stop composing glow + pulse while delivering reply
+    stopComposingGlow();
+    pulseSpeak(2);
+
+    // display reply
+    const reply = data && (data.reply || data.message) ? (data.reply || data.message) : "Sorry — I couldn't craft a reply.";
+    appendMessage(reply, "ai");
+  } catch (err) {
+    stopComposingGlow();
+    appendMessage("I'm having trouble reaching the mind behind my charm — try again later.", "ai");
+    console.error("AI chat error:", err);
+  }
+}
+
+/* wire up events */
+document.getElementById("model-send").addEventListener("click", sendMessage);
+document.getElementById("model-input").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") sendMessage();
+});
+
+/* Small accessibility: focus input on widget click */
+document.getElementById("model-chat-widget").addEventListener("click", () => {
+  document.getElementById("model-input").focus();
+});
+</script>
