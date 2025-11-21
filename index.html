@@ -276,7 +276,7 @@ async function sendMessage() {
   startComposingGlow();
 
   try {
-    const resp = await fetch("/ai-chat", {
+    const resp = await fetch("https://chat-widget-backend-d2ju.onrender.com/ai-chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text, memory })
